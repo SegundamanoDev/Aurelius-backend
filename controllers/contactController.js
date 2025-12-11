@@ -24,7 +24,7 @@ exports.submitContactForm = asyncHandler(async (req, res, next) => {
   try {
     // 3. Send the email notification to your personal address
     await sendEmail({
-      email: process.env.YOUR_PERSONAL_EMAIL, // Email address to notify
+      email: process.env.SMTP_USER, // Email address to notify
       subject: `NEW PORTFOLIO INQUIRY from ${message.name}`,
       message: emailMessage, // The HTML formatted message
     });

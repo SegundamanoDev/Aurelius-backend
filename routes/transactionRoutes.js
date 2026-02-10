@@ -3,11 +3,11 @@ const router = express.Router();
 const {
   depositFunds,
   requestWithdrawal,
-  handleServicePurchase,
   getMyTransactions,
   getAllTransactions,
   updateTransactionStatus,
   injectLedgerEntry,
+  purchaseService,
 } = require("../controllers/transactionController.js");
 const { protect, admin } = require("../middleware/authMiddleware.js");
 
@@ -19,7 +19,7 @@ router.post("/deposit", protect, depositFunds);
 router.post("/withdraw", protect, requestWithdrawal);
 
 // Handles Upgrades, Staking, Signal Purchases, and Funding Trading
-router.post("/purchase-service", protect, handleServicePurchase);
+router.post("/purchase", protect, purchaseService);
 
 // --- ADMIN ONLY ROUTES ---
 // These require the user to be an admin

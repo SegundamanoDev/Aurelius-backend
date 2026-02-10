@@ -1,16 +1,10 @@
-const Trader = require("../models/Trader.js");
+const mongoose = require("mongoose");
+const Trader = require("../models/Trader");
+const User = require("../models/User");
 
-// @desc    Admin: Create a new Master Trader
-exports.createTrader = async (req, res) => {
-  try {
-    const trader = await Trader.create(req.body);
-    res.status(201).json(trader);
-  } catch (error) {
-    res.status(400).json({ message: "Failed to create trader" });
-  }
-};
-
-// @desc    User: Get all traders for the Discovery Grid
+// ===============================
+// GET PUBLIC TRADERS
+// ===============================
 exports.getTraders = async (req, res) => {
   try {
     const traders = await Trader.find({ isPublic: true }).sort("-followers");
@@ -20,7 +14,21 @@ exports.getTraders = async (req, res) => {
   }
 };
 
-// @desc    Admin: Update trader stats (ROI/Followers)
+// ===============================
+// ADMIN: CREATE TRADER
+// ===============================
+exports.createTrader = async (req, res) => {
+  try {
+    const trader = await Trader.create(req.body);
+    res.status(201).json(trader);
+  } catch (error) {
+    res.status(400).json({ message: "Failed to create trader" });
+  }
+};
+
+// ===============================
+// ADMIN: UPDATE TRADER
+// ===============================
 exports.updateTrader = async (req, res) => {
   try {
     const trader = await Trader.findByIdAndUpdate(req.params.id, req.body, {
@@ -32,47 +40,60 @@ exports.updateTrader = async (req, res) => {
   }
 };
 
-// @desc    Admin: Delete a trader
+// ===============================
+// ADMIN: DELETE TRADER
+// ===============================
 exports.deleteTrader = async (req, res) => {
   try {
     await Trader.findByIdAndDelete(req.params.id);
-    res.json({ message: "Trader removed from terminal" });
+    res.json({ message: "Trader removed" });
   } catch (error) {
     res.status(400).json({ message: "Delete failed" });
   }
 };
 
+// ===============================
+// START COPYING
+// ===============================
 exports.startCopying = async (req, res) => {
   const { traderId, amount } = req.body;
-  const userId = req.user.id;
+  const userId = req.user._id;
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const user = await User.findById(userId).session(session);
-
-    // 1. Validation: Check if user has enough in Trading Balance
-    if (user.tradingBalance < amount) {
-      throw new Error(
-        "Insufficient trading balance. Please fund your trading account.",
-      );
+    if (!mongoose.Types.ObjectId.isValid(traderId)) {
+      throw new Error("Invalid trader ID");
     }
 
-    // 2. Check if already copying to prevent duplicates
+    const user = await User.findById(userId).session(session);
+    if (!user) throw new Error("User not found");
+
+    // 1. Balance check
+    if (user.tradingBalance < amount) {
+      throw new Error("Insufficient trading balance.");
+    }
+
+    // 2. Prevent duplicate mirroring
     const alreadyCopying = user.copiedTraders.some(
-      (t) => t.traderId.toString() === traderId,
+      (t) => t.traderId.toString() === traderId.toString(),
     );
+
     if (alreadyCopying) {
       throw new Error("You are already mirroring this strategist.");
     }
 
-    // 3. Update User: Add trader and lock the allocated amount
-    user.copiedTraders.push({ traderId, amountAllocated: amount });
-    user.tradingBalance -= amount; // Deduct from available trading funds
+    // 3. Lock funds + attach trader
+    user.copiedTraders.push({
+      traderId,
+      amountAllocated: amount,
+    });
+
+    user.tradingBalance -= amount;
     await user.save({ session });
 
-    // 4. Update Trader: Increment follower count automatically
+    // 4. Increment followers safely
     await Trader.findByIdAndUpdate(
       traderId,
       { $inc: { followers: 1 } },
@@ -80,6 +101,8 @@ exports.startCopying = async (req, res) => {
     );
 
     await session.commitTransaction();
+    session.endSession();
+
     res.status(200).json({
       message: "Mirroring started successfully",
       tradingBalance: user.tradingBalance,
@@ -87,38 +110,48 @@ exports.startCopying = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    res.status(400).json({ message: error.message });
-  } finally {
     session.endSession();
+    res.status(400).json({ message: error.message });
   }
 };
 
+// ===============================
+// STOP COPYING
+// ===============================
 exports.stopCopying = async (req, res) => {
   const { traderId } = req.body;
   const userId = req.user.id;
+
+  if (!traderId) {
+    return res.status(400).json({ message: "Trader ID is required" });
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const user = await User.findById(userId).session(session);
+    if (!user) throw new Error("User not found");
 
-    // 1. Find the copy data to get the refund amount
-    const copyData = user.copiedTraders.find(
-      (t) => t.traderId.toString() === traderId,
+    // Find the specific index
+    const copyIndex = user.copiedTraders.findIndex(
+      (t) => t.traderId.toString() === traderId.toString(),
     );
-    if (!copyData) throw new Error("Strategist not found in your terminal.");
 
-    // 2. Refund the amount back to Trading Balance
-    user.tradingBalance += copyData.amountAllocated;
+    if (copyIndex === -1) {
+      throw new Error("Target strategist not found in your active portfolio.");
+    }
 
-    // 3. Remove from user's list
-    user.copiedTraders = user.copiedTraders.filter(
-      (t) => t.traderId.toString() !== traderId,
-    );
+    // --- REFUND LOGIC REMOVED ---
+    // The amountAllocated is not added back to user.tradingBalance
+
+    // 1. Remove the trader from the user's active list
+    user.copiedTraders.splice(copyIndex, 1);
+
+    // 2. Save user state
     await user.save({ session });
 
-    // 4. Decrement Trader follower count
+    // 3. Update the trader's stats (decrement followers)
     await Trader.findByIdAndUpdate(
       traderId,
       { $inc: { followers: -1 } },
@@ -126,9 +159,11 @@ exports.stopCopying = async (req, res) => {
     );
 
     await session.commitTransaction();
+
     res.status(200).json({
-      message: "Position closed. Funds returned to trading balance.",
+      message: "Connection terminated. Allocated funds remains deducted.",
       tradingBalance: user.tradingBalance,
+      copiedTraders: user.copiedTraders,
     });
   } catch (error) {
     await session.abortTransaction();

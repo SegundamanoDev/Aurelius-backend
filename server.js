@@ -20,7 +20,7 @@ const app = express();
 
 // --- MIDDLEWARE ---
 // Use Morgan for logging API requests during development
-if (process.env.NODE_NODE === "development") {
+if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 

@@ -11,7 +11,7 @@ exports.depositFunds = async (req, res) => {
   const { amount, method, referenceId } = req.body;
   try {
     const transaction = await Transaction.create({
-      userId: req.user.id,
+      userId: req.user._id,
       type: "deposit",
       amount,
       method,
@@ -32,13 +32,13 @@ exports.requestWithdrawal = async (req, res) => {
   session.startTransaction();
 
   try {
-    const user = await User.findById(req.user.id).session(session);
+    const user = await User.findById(req.user._id).session(session);
     if (user.balance < amount) throw new Error("Insufficient balance");
 
     const transaction = await Transaction.create(
       [
         {
-          userId: req.user.id,
+          userId: req.user._id,
           type: "withdrawal",
           amount,
           method,
@@ -65,6 +65,59 @@ exports.requestWithdrawal = async (req, res) => {
 // 2. SERVICE & TRADING OPERATIONS (Internal)
 // ==========================================
 
+exports.purchaseService = async (req, res) => {
+  const { amount, planName, signalType, description } = req.body;
+  const userId = req.user._id;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const user = await User.findById(userId).session(session);
+
+    if (!user) throw new Error("User not found");
+
+    if (user.balance < amount) {
+      throw new Error("Insufficient liquidity for this purchase.");
+    }
+
+    // Deduct balance
+    user.balance -= amount;
+    await user.save({ session });
+
+    // Create transaction
+    const [transaction] = await Transaction.create(
+      [
+        {
+          userId,
+          type: "purchase",
+          amount,
+          status: "completed",
+          description,
+          details: {
+            planName,
+            signalType,
+          },
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      message: "Purchase successful",
+      newBalance: user.balance,
+      transaction,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // Universal Purchase Handler (Upgrade, Signal, Stake, Fund Trading)
 // transactionController.js
 
@@ -74,7 +127,7 @@ exports.handleServicePurchase = async (req, res) => {
   session.startTransaction();
 
   try {
-    const user = await User.findById(req.user.id).session(session);
+    const user = await User.findById(req.user._id).session(session);
     if (user.balance < amount)
       throw new Error("Insufficient main wallet balance");
 
@@ -105,7 +158,7 @@ exports.handleServicePurchase = async (req, res) => {
     await Transaction.create(
       [
         {
-          userId: req.user.id,
+          userId: req.user._id,
           type,
           amount,
           details,
@@ -135,7 +188,7 @@ exports.handleServicePurchase = async (req, res) => {
 
 exports.getMyTransactions = async (req, res) => {
   try {
-    const transactions = await Transaction.find({ userId: req.user.id }).sort(
+    const transactions = await Transaction.find({ userId: req.user._id }).sort(
       "-createdAt",
     );
     res.json(transactions);

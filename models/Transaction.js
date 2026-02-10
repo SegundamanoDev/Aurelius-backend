@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const transactionSchema = new mongoose.Schema(
   {
     userId: {
@@ -8,41 +9,37 @@ const transactionSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Detailed types for precise tracking
     type: {
       type: String,
       enum: [
         "deposit",
-        "withdrawal", // Basic Wallet
-        "account_upgrade", // Plan Upgrades
+        "purchase",
+        "withdrawal",
+        "account_upgrade",
         "trading_fund",
-        "trading_yield", // Trading Activity
-        "signal_purchase", // One-time service
-        "staking_deposit",
-        "staking_reward", // Passive Income
+        "trading_yield",
       ],
       required: true,
     },
 
     amount: { type: Number, required: true },
+
     status: {
       type: String,
       enum: ["pending", "completed", "failed"],
       default: "pending",
     },
 
-    // Tracking metadata
     details: {
-      planName: String, // e.g., "Gold Plan"
-      signalType: String, // e.g., "Crypto-Daily"
-      stakingDuration: Number, // In days
+      planName: String,
+      signalType: String,
+      stakingDuration: Number,
     },
 
-    referenceId: String, // Payment provider ID
+    referenceId: String,
     description: String,
   },
   { timestamps: true },
 );
 
-const Transaction = mongoose.model("Transaction", transactionSchema);
-module.exports = Transaction;
+module.exports = mongoose.model("Transaction", transactionSchema);

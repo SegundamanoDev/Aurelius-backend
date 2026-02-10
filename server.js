@@ -1,53 +1,67 @@
-// --- Core Dependencies ---
 const express = require("express");
 const dotenv = require("dotenv");
+const cors = require("cors");
 const morgan = require("morgan");
-const colors = require("colors");
+const connectDB = require("./config/db.js");
 
-// --- Custom Components ---
-const connectDB = require("./config/db");
-const contactRouter = require("./routes/contact");
-const projectRouter = require("./routes/projects");
-const AppError = require("./utils/appError");
-const globalErrorHandler = require("./middleware/errorHandler");
+// Route consts
+const authRoutes = require("./routes/authRoutes.js");
+const userRoutes = require("./routes/userRoutes.js");
+const transactionRoutes = require("./routes/transactionRoutes.js");
+const traderRoutes = require("./routes/traderRoutes.js");
 
-dotenv.config({ path: "./.env" });
+// Load Environment Variables
+dotenv.config();
 
+// Connect to Database
 connectDB();
 
 const app = express();
-app.use(express.json());
 
-// Request Logger (Development only)
-if (process.env.NODE_ENV === "development") {
+// --- MIDDLEWARE ---
+// Use Morgan for logging API requests during development
+if (process.env.NODE_NODE === "development") {
   app.use(morgan("dev"));
 }
 
-// Security: CORS (Crucial for MERN to allow client/server communication)
-const cors = require("cors");
-app.use(cors());
+app.use(cors()); // Allows your React frontend to access the backend
+app.use(express.json()); // Allows parsing of JSON bodies in req.body
 
-app.use("/api/v1/contact", contactRouter);
-app.use("/api/v1/projects", projectRouter);
+// --- ROUTES ---
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/traders", traderRoutes);
 
-app.use((req, res, next) => {
-  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+// --- BASE ROUTE ---
+app.get("/", (req, res) => {
+  res.send("Broker API is running smoothly...");
 });
 
-app.use(globalErrorHandler);
+// --- ERROR HANDLING MIDDLEWARE ---
+// Catch-all for 404 Not Found
+app.use((req, res, next) => {
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  res.status(404);
+  next(error);
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  res.status(statusCode).json({
+    message: err.message,
+    stack: process.env.NODE_ENV === "production" ? null : err.stack,
+  });
+});
+
+// --- START SERVER ---
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(
-  PORT,
-  // Use colors for a nice console output
-  console.log(
-    `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold
-  )
-);
-
-// --- 7. Handle Unhandled Promise Rejections (Professional Graceful Shutdown) ---
-process.on("unhandledRejection", (err, promise) => {
-  console.log(`Error: ${err.message}`.red);
-  // Close server & exit process
-  server.close(() => process.exit(1));
+app.listen(PORT, () => {
+  console.log(`
+    🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}
+    🛡️  Security Middleware Active
+    💹 Ready for Trading Activity
+  `);
 });

@@ -242,26 +242,77 @@ exports.updateTransactionStatus = async (req, res) => {
   }
 };
 
+// backend/controllers/adminController.js
+
 exports.injectLedgerEntry = async (req, res) => {
   const { userId, amount, method, date, type } = req.body;
+
   try {
+    // 1. Create the historical transaction
     const transaction = await Transaction.create({
       userId,
       type: type || "deposit",
-      amount,
-      method,
-      status: "completed", // Backdated entries are usually pre-completed
-      description: `Backdated Entry: ${method}`,
-      createdAt: new Date(date), // Force the custom date
+      amount: Number(amount),
+      status: "completed",
+      description: type === "profit" ? `+${amount} Profit` : ``,
+      createdAt: new Date(date),
     });
 
-    // Also update the user's balance immediately
-    await User.findByIdAndUpdate(userId, {
-      $inc: { balance: amount },
-    });
+    // 2. Update User Balances
+    const updateData = { $inc: { balance: Number(amount) } };
+
+    // If it's a profit, also increment the profit tracking field
+    if (type === "profit" || type === "trading_yield") {
+      updateData.$inc.totalProfits = Number(amount);
+    }
+
+    await User.findByIdAndUpdate(userId, updateData);
+    console.log(transaction);
 
     res.status(201).json(transaction);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+// transactionController.js
+
+exports.topupUserProfit = async (req, res) => {
+  const { userId, amount, description } = req.body;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const user = await User.findById(userId).session(session);
+    if (!user) throw new Error("User not found");
+
+    // 1. Update User: Increase both liquid balance and cumulative profit record
+    user.balance += Number(amount);
+    user.totalProfits = (user.totalProfits || 0) + Number(amount);
+    await user.save({ session });
+
+    const transaction = await Transaction.create(
+      [
+        {
+          userId,
+          type: "profit",
+          amount,
+          status: "completed",
+          description: description || "System Profit Allocation",
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    res.status(201).json({
+      message: "Profit successfully injected",
+      transaction: transaction[0],
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    res.status(400).json({ message: error.message });
+  } finally {
+    session.endSession();
   }
 };

@@ -38,8 +38,8 @@ const userSchema = new mongoose.Schema(
     totalProfits: { type: Number, default: 0 },
     accountType: {
       type: String,
-      enum: ["demo", "basic", "silver", "gold", "vip"],
-      default: "demo",
+      enum: ["basic", "standard", "silver", "gold", "demo"],
+      default: "basic",
     },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     isActive: { type: Boolean, default: true },
@@ -47,10 +47,20 @@ const userSchema = new mongoose.Schema(
 
     copiedTraders: [
       {
-        traderId: { type: mongoose.Schema.Types.ObjectId, ref: "Trader" },
-        amountAllocated: { type: Number, default: 0 },
+        traderId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Trader",
+        },
+        amountAllocated: {
+          type: Number,
+          default: 0,
+        },
       },
     ],
+    tradingBalance: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );

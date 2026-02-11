@@ -3,60 +3,10 @@ const Trader = require("../models/Trader");
 const User = require("../models/User");
 
 // ===============================
-// GET PUBLIC TRADERS
-// ===============================
-exports.getTraders = async (req, res) => {
-  try {
-    const traders = await Trader.find({ isPublic: true }).sort("-followers");
-    res.json(traders);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// ===============================
-// ADMIN: CREATE TRADER
-// ===============================
-exports.createTrader = async (req, res) => {
-  try {
-    const trader = await Trader.create(req.body);
-    res.status(201).json(trader);
-  } catch (error) {
-    res.status(400).json({ message: "Failed to create trader" });
-  }
-};
-
-// ===============================
-// ADMIN: UPDATE TRADER
-// ===============================
-exports.updateTrader = async (req, res) => {
-  try {
-    const trader = await Trader.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    res.json(trader);
-  } catch (error) {
-    res.status(400).json({ message: "Update failed" });
-  }
-};
-
-// ===============================
-// ADMIN: DELETE TRADER
-// ===============================
-exports.deleteTrader = async (req, res) => {
-  try {
-    await Trader.findByIdAndDelete(req.params.id);
-    res.json({ message: "Trader removed" });
-  } catch (error) {
-    res.status(400).json({ message: "Delete failed" });
-  }
-};
-
-// ===============================
-// START COPYING
+// START COPYING TRADER
 // ===============================
 exports.startCopying = async (req, res) => {
-  const { traderId, amount } = req.body;
+  const { traderId } = req.body;
   const userId = req.user._id;
 
   const session = await mongoose.startSession();
@@ -67,108 +17,126 @@ exports.startCopying = async (req, res) => {
       throw new Error("Invalid trader ID");
     }
 
+    const trader = await Trader.findById(traderId).session(session);
+    if (!trader) throw new Error("Trader not found");
+
     const user = await User.findById(userId).session(session);
     if (!user) throw new Error("User not found");
 
-    // 1. Balance check
-    if (user.tradingBalance < amount) {
-      throw new Error("Insufficient trading balance.");
-    }
-
-    // 2. Prevent duplicate mirroring
+    // ✅ Prevent duplicate copying
     const alreadyCopying = user.copiedTraders.some(
       (t) => t.traderId.toString() === traderId.toString(),
     );
 
     if (alreadyCopying) {
-      throw new Error("You are already mirroring this strategist.");
+      throw new Error("You are already copying this trader");
     }
 
-    // 3. Lock funds + attach trader
+    // ✅ Add trader to copiedTraders array
     user.copiedTraders.push({
       traderId,
-      amountAllocated: amount,
     });
 
-    user.tradingBalance -= amount;
     await user.save({ session });
 
-    // 4. Increment followers safely
-    await Trader.findByIdAndUpdate(
-      traderId,
-      { $inc: { followers: 1 } },
-      { session },
-    );
+    // ✅ Increase trader followers
+    trader.social.followers += 1;
+    await trader.save({ session });
 
     await session.commitTransaction();
     session.endSession();
 
+    // Return updated user profile
+    const updatedUser = await User.findById(userId).populate(
+      "copiedTraders.traderId",
+    );
+
     res.status(200).json({
-      message: "Mirroring started successfully",
-      tradingBalance: user.tradingBalance,
-      copiedTraders: user.copiedTraders,
+      message: "Copy trading started successfully",
+      user: updatedUser,
     });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    res.status(400).json({ message: error.message });
+
+    res.status(400).json({
+      message: error.message,
+    });
   }
 };
 
-// ===============================
-// STOP COPYING
-// ===============================
-exports.stopCopying = async (req, res) => {
-  const { traderId } = req.body;
-  const userId = req.user.id;
-
-  if (!traderId) {
-    return res.status(400).json({ message: "Trader ID is required" });
-  }
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+// CREATE
+exports.createTrader = async (req, res) => {
   try {
-    const user = await User.findById(userId).session(session);
-    if (!user) throw new Error("User not found");
+    const trader = await Trader.create(req.body);
 
-    // Find the specific index
-    const copyIndex = user.copiedTraders.findIndex(
-      (t) => t.traderId.toString() === traderId.toString(),
-    );
-
-    if (copyIndex === -1) {
-      throw new Error("Target strategist not found in your active portfolio.");
-    }
-
-    // --- REFUND LOGIC REMOVED ---
-    // The amountAllocated is not added back to user.tradingBalance
-
-    // 1. Remove the trader from the user's active list
-    user.copiedTraders.splice(copyIndex, 1);
-
-    // 2. Save user state
-    await user.save({ session });
-
-    // 3. Update the trader's stats (decrement followers)
-    await Trader.findByIdAndUpdate(
-      traderId,
-      { $inc: { followers: -1 } },
-      { session },
-    );
-
-    await session.commitTransaction();
-
-    res.status(200).json({
-      message: "Connection terminated. Allocated funds remains deducted.",
-      tradingBalance: user.tradingBalance,
-      copiedTraders: user.copiedTraders,
+    res.status(201).json({
+      message: "Trader created successfully",
+      trader,
     });
   } catch (error) {
-    await session.abortTransaction();
     res.status(400).json({ message: error.message });
-  } finally {
-    session.endSession();
+  }
+};
+exports.getTraders = async (req, res) => {
+  try {
+    const traders = await Trader.find({ isActive: true });
+
+    res.status(200).json(traders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.getTraderById = async (req, res) => {
+  try {
+    const trader = await Trader.findById(req.params.id);
+
+    if (!trader) {
+      return res.status(404).json({ message: "Trader not found" });
+    }
+
+    res.status(200).json(trader);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.updateTrader = async (req, res) => {
+  try {
+    const trader = await Trader.findById(req.params.id);
+
+    if (!trader) {
+      return res.status(404).json({ message: "Trader not found" });
+    }
+
+    const updatedTrader = await Trader.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true },
+    );
+
+    res.status(200).json({
+      message: "Trader updated successfully",
+      trader: updatedTrader,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+exports.deleteTrader = async (req, res) => {
+  try {
+    const trader = await Trader.findById(req.params.id);
+
+    if (!trader) {
+      return res.status(404).json({ message: "Trader not found" });
+    }
+
+    trader.isActive = false;
+    await trader.save();
+
+    res.status(200).json({
+      message: "Trader deactivated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

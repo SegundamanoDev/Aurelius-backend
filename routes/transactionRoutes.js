@@ -8,6 +8,7 @@ const {
   updateTransactionStatus,
   injectLedgerEntry,
   purchaseService,
+  topupUserProfit,
 } = require("../controllers/transactionController.js");
 const { protect, admin } = require("../middleware/authMiddleware.js");
 
@@ -17,7 +18,7 @@ const { protect, admin } = require("../middleware/authMiddleware.js");
 router.get("/my-history", protect, getMyTransactions);
 router.post("/deposit", protect, depositFunds);
 router.post("/withdraw", protect, requestWithdrawal);
-
+router.post("/inject-profit", protect, admin, topupUserProfit);
 // Handles Upgrades, Staking, Signal Purchases, and Funding Trading
 router.post("/purchase", protect, purchaseService);
 

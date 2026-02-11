@@ -18,6 +18,7 @@ const transactionSchema = new mongoose.Schema(
         "account_upgrade",
         "trading_fund",
         "trading_yield",
+        "profit",
       ],
       required: true,
     },
@@ -29,7 +30,7 @@ const transactionSchema = new mongoose.Schema(
       enum: ["pending", "completed", "failed"],
       default: "pending",
     },
-
+    method: { type: String },
     details: {
       planName: String,
       signalType: String,

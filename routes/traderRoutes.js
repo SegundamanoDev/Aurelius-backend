@@ -4,32 +4,21 @@ const router = express.Router();
 const {
   createTrader,
   getTraders,
+  getTraderById,
   updateTrader,
   deleteTrader,
   startCopying,
-  stopCopying,
-} = require("../controllers/traderController.js");
+} = require("../controllers/traderController");
 
-const { protect, admin } = require("../middleware/authMiddleware.js");
+const { protect, admin } = require("../middleware/authMiddleware");
 
-// =======================
-// PUBLIC / USER ROUTES
-// =======================
-
-// Get public traders (Discovery Grid)
-router.get("/", getTraders);
-
-// Start copy trading
+// ===== PUBLIC =====
 router.post("/copy/start", protect, startCopying);
-
-// Stop copy trading
-router.post("/stop-copying", protect, stopCopying);
-
-// =======================
-// ADMIN ROUTES
-// =======================
-
+router.get("/", getTraders);
 router.post("/", protect, admin, createTrader);
+router.get("/:id", getTraderById);
+
+// ===== ADMIN =====
 router.put("/:id", protect, admin, updateTrader);
 router.delete("/:id", protect, admin, deleteTrader);
 

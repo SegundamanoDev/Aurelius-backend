@@ -32,7 +32,7 @@ exports.registerUser = async (req, res) => {
       lastName,
       middleName,
       email,
-      password, // Send plain text, model hashes it
+      password,
       sex,
       maritalStatus,
       occupation,
@@ -44,7 +44,6 @@ exports.registerUser = async (req, res) => {
       user: {
         _id: user._id,
         email: user.email,
-        accountType: user.accountType,
       },
     });
   } catch (error) {

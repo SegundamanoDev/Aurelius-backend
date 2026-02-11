@@ -1,22 +1,56 @@
 const mongoose = require("mongoose");
-
 const traderSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
-    avatar: { type: String, required: true }, // e.g., "AK" or a URL
-    strategy: { type: String, default: "Institutional" }, // e.g., "Scalping"
+    name: String,
+    username: String,
+    avatar: String,
+    bio: String,
+    verified: { type: Boolean, default: false },
+    experienceYears: Number,
+    location: String,
 
-    // Performance Metrics (Strings to match your UI +124.5%)
-    roi: { type: String, required: true },
-    winRate: { type: String, required: true },
+    performance: {
+      roi30d: Number,
+      roi90d: Number,
+      roi1y: Number,
+      totalRoi: Number,
+      monthlyAverage: Number,
+      totalProfit: Number,
+      assetsUnderManagement: Number,
+      winRate: Number,
+      totalTrades: Number,
+      winningTrades: Number,
+      losingTrades: Number,
+      avgWin: Number,
+      avgLoss: Number,
+      profitFactor: Number,
+    },
 
-    // Stats for the Discovery Grid
-    followers: { type: Number, default: 0 },
-    maxDrawdown: { type: String, default: "-0.0%" },
+    riskMetrics: {
+      riskScore: Number,
+      maxDrawdown: Number,
+      sharpeRatio: Number,
+      averageTradeDuration: String,
+      maxConsecutiveLosses: Number,
+      leverageUsed: String,
+    },
 
-    // Admin Control
-    isPublic: { type: Boolean, default: true },
-    isTrending: { type: Boolean, default: false },
+    strategy: {
+      style: String,
+      markets: [String],
+      preferredAssets: [String],
+      timeframe: String,
+      riskLevel: String,
+    },
+
+    social: {
+      followers: { type: Number, default: 0 },
+      copiers: { type: Number, default: 0 },
+      rating: Number,
+      reviewsCount: Number,
+    },
+
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true },
 );

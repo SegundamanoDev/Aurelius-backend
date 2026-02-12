@@ -14,7 +14,13 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     password: { type: String, required: true },
-
+    currency: {
+      type: String,
+      trim: true,
+      default: "USD",
+      uppercase: true,
+      required: true,
+    },
     // Profile Details
     sex: { type: String, enum: ["male", "female", "other"] },
     maritalStatus: {

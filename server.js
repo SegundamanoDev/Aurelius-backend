@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
 const connectDB = require("./config/db.js");
-
+require("./config/cron.js");
 // Route consts
 const authRoutes = require("./routes/authRoutes.js");
 const userRoutes = require("./routes/userRoutes.js");
@@ -24,8 +24,13 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-app.use(cors()); // Allows your React frontend to access the backend
-app.use(express.json()); // Allows parsing of JSON bodies in req.body
+app.use(cors());
+app.use(express.json());
+
+// The route the cron job hits
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});
 
 // --- ROUTES ---
 app.use("/api/auth", authRoutes);

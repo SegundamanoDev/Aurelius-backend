@@ -22,7 +22,7 @@ const transactionSchema = new mongoose.Schema(
       ],
       required: true,
     },
-
+    proofImage: { type: String },
     amount: { type: Number, required: true },
 
     status: {

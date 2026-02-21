@@ -11,12 +11,13 @@ const {
   topupUserProfit,
 } = require("../controllers/transactionController.js");
 const { protect, admin } = require("../middleware/authMiddleware.js");
+const { upload } = require("../config/cloudinary.js");
 
 // --- USER PRIVATE ROUTES ---
 // All these require the user to be logged in (protect)
 
 router.get("/my-history", protect, getMyTransactions);
-router.post("/deposit", protect, depositFunds);
+router.post("/deposit", protect, upload.single("my_file"), depositFunds);
 router.post("/withdraw", protect, requestWithdrawal);
 router.post("/inject-profit", protect, admin, topupUserProfit);
 // Handles Upgrades, Staking, Signal Purchases, and Funding Trading

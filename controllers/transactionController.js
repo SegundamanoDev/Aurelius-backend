@@ -8,50 +8,70 @@ const mongoose = require("mongoose");
 
 // Create Deposit (User starts here)
 exports.depositFunds = async (req, res) => {
-  const { amount, method, referenceId } = req.body;
   try {
+    // Multer puts text fields in req.body and the file in req.file
+    const { amount, method, referenceId } = req.body;
+
+    // Check if file exists
+    if (!req.file) {
+      return res.status(400).json({ message: "No proof of payment uploaded" });
+    }
+
     const transaction = await Transaction.create({
       userId: req.user._id,
       type: "deposit",
-      amount,
+      amount: Number(amount), // FORCE CONVERSION TO NUMBER
       method,
       referenceId,
       status: "pending",
       description: `Deposit via ${method}`,
+      proofImage: req.file.path, // Cloudinary URL
     });
+
     res.status(201).json(transaction);
   } catch (error) {
+    console.error("Deposit Controller Error:", error);
     res.status(400).json({ message: error.message });
   }
 };
 
 // Request Withdrawal (User)
 exports.requestWithdrawal = async (req, res) => {
-  const { amount, method } = req.body;
+  const { amount, method, payoutAddress } = req.body; // Added payoutAddress
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const user = await User.findById(req.user._id).session(session);
-    if (user.balance < amount) throw new Error("Insufficient balance");
 
-    const transaction = await Transaction.create(
+    if (user.balance < amount) {
+      throw new Error("Insufficient balance");
+    }
+
+    const referenceId = `WD-${Math.random().toString(36).toUpperCase().slice(2, 10)}`;
+
+    const [transaction] = await Transaction.create(
       [
         {
           userId: req.user._id,
           type: "withdrawal",
-          amount,
+          amount: Number(amount),
           method,
+          referenceId,
           status: "pending",
+          description: `Withdrawal request to ${payoutAddress}`,
         },
       ],
       { session },
     );
 
-    user.balance -= amount; // Lock the funds
+    // Lock the funds immediately so they can't spend it elsewhere
+    user.balance -= amount;
     await user.save({ session });
 
     await session.commitTransaction();
+
+    // Return the transaction object so the frontend can use the referenceId in EmailJS
     res.status(201).json(transaction);
   } catch (error) {
     await session.abortTransaction();
@@ -211,7 +231,6 @@ exports.getAllTransactions = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 // transactionController.js
 
 exports.updateTransactionStatus = async (req, res) => {

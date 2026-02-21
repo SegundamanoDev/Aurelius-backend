@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const https = require("https");
 
 // Your Render backend URL
-const backendUrl = "https://your-app-name.onrender.com";
+const backendUrl = "https://aurelius-backend-dsdm.onrender.com/api";
 
 // Schedule a task to run every 14 minutes
 cron.schedule("*/14 * * * *", () => {

@@ -1,0 +1,707 @@
+[
+  {
+    "name": "Julian Thorne",
+    "username": "jthorne_fx",
+    "avatar": "https://i.pravatar.cc/150?u=jthorne",
+    "bio": "Specialized in institutional price action and liquidity sweeps. Focused on capital preservation and high-probability setups.",
+    "verified": true,
+    "experienceYears": 8,
+    "location": "London, UK",
+    "performance": {
+      "roi30d": 14.2,
+      "roi90d": 38.5,
+      "roi1y": 112.4,
+      "totalRoi": 245.8,
+      "monthlyAverage": 9.5,
+      "totalProfit": 340800,
+      "assetsUnderManagement": 2400000,
+      "winRate": 68,
+      "totalTrades": 1240,
+      "winningTrades": 843,
+      "losingTrades": 397,
+      "avgWin": 450,
+      "avgLoss": 210,
+      "profitFactor": 2.14
+    },
+    "riskMetrics": {
+      "riskScore": 3,
+      "maxDrawdown": 4.2,
+      "sharpeRatio": 3.1,
+      "averageTradeDuration": "4h",
+      "maxConsecutiveLosses": 4,
+      "leverageUsed": "1:30"
+    },
+    "strategy": {
+      "style": "Price Action",
+      "markets": ["Forex", "Indices"],
+      "preferredAssets": ["EUR/USD", "GBP/JPY", "Gold"],
+      "timeframe": "H1",
+      "riskLevel": "Medium"
+    },
+    "social": {
+      "followers": 12400,
+      "copiers": 840,
+      "rating": 4.9,
+      "reviewsCount": 312
+    },
+    "isActive": true
+  },
+  {
+    "name": "Elena Sterling",
+    "username": "elena_quant",
+    "avatar": "https://i.pravatar.cc/150?u=elena",
+    "bio": "Quantitative analyst employing high-frequency algorithmic strategies. Mathematical edge based on mean reversion.",
+    "verified": true,
+    "experienceYears": 10,
+    "location": "Singapore",
+    "performance": {
+      "roi30d": 9.8,
+      "roi90d": 24.1,
+      "roi1y": 88.5,
+      "totalRoi": 192.3,
+      "monthlyAverage": 7.4,
+      "totalProfit": 499800,
+      "assetsUnderManagement": 5100000,
+      "winRate": 82,
+      "totalTrades": 4500,
+      "winningTrades": 3690,
+      "losingTrades": 810,
+      "avgWin": 120,
+      "avgLoss": 95,
+      "profitFactor": 4.2
+    },
+    "riskMetrics": {
+      "riskScore": 2,
+      "maxDrawdown": 1.8,
+      "sharpeRatio": 4.2,
+      "averageTradeDuration": "15m",
+      "maxConsecutiveLosses": 3,
+      "leverageUsed": "1:10"
+    },
+    "strategy": {
+      "style": "Algorithmic",
+      "markets": ["Stocks", "Indices"],
+      "preferredAssets": ["NASDAQ", "S&P 500", "Nikkei 225"],
+      "timeframe": "M5",
+      "riskLevel": "Low"
+    },
+    "social": {
+      "followers": 8920,
+      "copiers": 1205,
+      "rating": 5.0,
+      "reviewsCount": 456
+    },
+    "isActive": true
+  },
+  {
+    "name": "Sofia Chen",
+    "username": "sofi_trades",
+    "avatar": "https://i.pravatar.cc/150?u=sofia",
+    "bio": "Aggressive scalper specializing in low-timeframe liquidity gaps. Fast execution and tight risk management.",
+    "verified": true,
+    "experienceYears": 6,
+    "location": "Hong Kong",
+    "performance": {
+      "roi30d": 22.1,
+      "roi90d": 54.2,
+      "roi1y": 145.0,
+      "totalRoi": 312.5,
+      "monthlyAverage": 18.2,
+      "totalProfit": 187850,
+      "assetsUnderManagement": 850000,
+      "winRate": 74,
+      "totalTrades": 850,
+      "winningTrades": 629,
+      "losingTrades": 221,
+      "avgWin": 800,
+      "avgLoss": 450,
+      "profitFactor": 2.8
+    },
+    "riskMetrics": {
+      "riskScore": 4,
+      "maxDrawdown": 8.2,
+      "sharpeRatio": 2.8,
+      "averageTradeDuration": "30m",
+      "maxConsecutiveLosses": 5,
+      "leverageUsed": "1:50"
+    },
+    "strategy": {
+      "style": "Scalping",
+      "markets": ["Forex", "Commodities"],
+      "preferredAssets": ["XAU/USD", "GBP/USD"],
+      "timeframe": "M1",
+      "riskLevel": "High"
+    },
+    "social": {
+      "followers": 15600,
+      "copiers": 430,
+      "rating": 4.8,
+      "reviewsCount": 189
+    },
+    "isActive": true
+  },
+  {
+    "name": "Silas Kross",
+    "username": "kross_vol",
+    "avatar": "https://i.pravatar.cc/150?u=silas",
+    "bio": "Institutional volatility arbitrage. Designed for large capital with consistent monthly yields regardless of market direction.",
+    "verified": true,
+    "experienceYears": 15,
+    "location": "New York, USA",
+    "performance": {
+      "roi30d": 7.4,
+      "roi90d": 21.0,
+      "roi1y": 72.4,
+      "totalRoi": 142.5,
+      "monthlyAverage": 6.1,
+      "totalProfit": 888000,
+      "assetsUnderManagement": 12000000,
+      "winRate": 89,
+      "totalTrades": 320,
+      "winningTrades": 285,
+      "losingTrades": 35,
+      "avgWin": 3200,
+      "avgLoss": 1100,
+      "profitFactor": 4.8
+    },
+    "riskMetrics": {
+      "riskScore": 2,
+      "maxDrawdown": 2.1,
+      "sharpeRatio": 5.2,
+      "averageTradeDuration": "2d",
+      "maxConsecutiveLosses": 2,
+      "leverageUsed": "1:5"
+    },
+    "strategy": {
+      "style": "Volatility Arb",
+      "markets": ["Options", "Indices"],
+      "preferredAssets": ["VIX", "SPX Options"],
+      "timeframe": "Daily",
+      "riskLevel": "Low"
+    },
+    "social": {
+      "followers": 5400,
+      "copiers": 210,
+      "rating": 4.9,
+      "reviewsCount": 98
+    },
+    "isActive": true
+  },
+  {
+    "name": "Aria Vance",
+    "username": "aria_crypto",
+    "avatar": "https://i.pravatar.cc/150?u=aria",
+    "bio": "Systematic trend hunter in the digital asset space. Capturing 100x moves with rigorous exit logic.",
+    "verified": true,
+    "experienceYears": 5,
+    "location": "Dubai, UAE",
+    "performance": {
+      "roi30d": 31.5,
+      "roi90d": 84.2,
+      "roi1y": 312.4,
+      "totalRoi": 642.0,
+      "monthlyAverage": 22.4,
+      "totalProfit": 1008000,
+      "assetsUnderManagement": 3200000,
+      "winRate": 58,
+      "totalTrades": 412,
+      "winningTrades": 239,
+      "losingTrades": 173,
+      "avgWin": 7500,
+      "avgLoss": 1200,
+      "profitFactor": 2.4
+    },
+    "riskMetrics": {
+      "riskScore": 7,
+      "maxDrawdown": 12.5,
+      "sharpeRatio": 2.4,
+      "averageTradeDuration": "3d",
+      "maxConsecutiveLosses": 6,
+      "leverageUsed": "1:20"
+    },
+    "strategy": {
+      "style": "Trend Following",
+      "markets": ["Crypto"],
+      "preferredAssets": ["BTC/USD", "ETH/USD", "SOL/USD"],
+      "timeframe": "H4",
+      "riskLevel": "High"
+    },
+    "social": {
+      "followers": 28900,
+      "copiers": 1840,
+      "rating": 4.7,
+      "reviewsCount": 542
+    },
+    "isActive": true
+  },
+  {
+    "name": "Leo Fontaine",
+    "username": "fontaine_eq",
+    "avatar": "https://i.pravatar.cc/150?u=leo",
+    "bio": "Growth equity specialist. Combining fundamental macro analysis with technical entry precision.",
+    "verified": true,
+    "experienceYears": 9,
+    "location": "Paris, France",
+    "performance": {
+      "roi30d": 12.8,
+      "roi90d": 32.4,
+      "roi1y": 104.2,
+      "totalRoi": 215.0,
+      "monthlyAverage": 8.7,
+      "totalProfit": 819200,
+      "assetsUnderManagement": 6400000,
+      "winRate": 70,
+      "totalTrades": 180,
+      "winningTrades": 126,
+      "losingTrades": 54,
+      "avgWin": 12000,
+      "avgLoss": 4500,
+      "profitFactor": 3.1
+    },
+    "riskMetrics": {
+      "riskScore": 3,
+      "maxDrawdown": 3.9,
+      "sharpeRatio": 3.4,
+      "averageTradeDuration": "1w",
+      "maxConsecutiveLosses": 3,
+      "leverageUsed": "1:2"
+    },
+    "strategy": {
+      "style": "Equity Growth",
+      "markets": ["Stocks"],
+      "preferredAssets": ["NVDA", "TSLA", "AAPL"],
+      "timeframe": "Daily",
+      "riskLevel": "Medium"
+    },
+    "social": {
+      "followers": 7200,
+      "copiers": 340,
+      "rating": 4.9,
+      "reviewsCount": 115
+    },
+    "isActive": true
+  },
+  {
+    "name": "Nadia Sokolov",
+    "username": "nadia_alpha",
+    "avatar": "https://i.pravatar.cc/150?u=nadia",
+    "bio": "Mean reversion trader focusing on overextended market conditions and RSI divergences.",
+    "verified": true,
+    "experienceYears": 7,
+    "location": "Berlin, Germany",
+    "performance": {
+      "roi30d": 10.2,
+      "roi90d": 28.5,
+      "roi1y": 92.1,
+      "totalRoi": 178.5,
+      "monthlyAverage": 7.9,
+      "totalProfit": 214200,
+      "assetsUnderManagement": 2100000,
+      "winRate": 77,
+      "totalTrades": 640,
+      "winningTrades": 493,
+      "losingTrades": 147,
+      "avgWin": 950,
+      "avgLoss": 680,
+      "profitFactor": 2.2
+    },
+    "riskMetrics": {
+      "riskScore": 3,
+      "maxDrawdown": 4.8,
+      "sharpeRatio": 2.9,
+      "averageTradeDuration": "8h",
+      "maxConsecutiveLosses": 4,
+      "leverageUsed": "1:25"
+    },
+    "strategy": {
+      "style": "Mean Reversion",
+      "markets": ["Forex", "Stocks"],
+      "preferredAssets": ["USD/CAD", "AMD"],
+      "timeframe": "H1",
+      "riskLevel": "Medium"
+    },
+    "social": {
+      "followers": 6100,
+      "copiers": 290,
+      "rating": 4.6,
+      "reviewsCount": 84
+    },
+    "isActive": true
+  },
+  {
+    "name": "Hugo Blackwood",
+    "username": "hugo_hedge",
+    "avatar": "https://i.pravatar.cc/150?u=hugo",
+    "bio": "Risk-averse hedging strategy using delta-neutral positions. Stable returns in all market cycles.",
+    "verified": true,
+    "experienceYears": 20,
+    "location": "Zurich, Switzerland",
+    "performance": {
+      "roi30d": 6.2,
+      "roi90d": 17.4,
+      "roi1y": 62.0,
+      "totalRoi": 115.4,
+      "monthlyAverage": 5.1,
+      "totalProfit": 930000,
+      "assetsUnderManagement": 15000000,
+      "winRate": 94,
+      "totalTrades": 1100,
+      "winningTrades": 1034,
+      "losingTrades": 66,
+      "avgWin": 2100,
+      "avgLoss": 1500,
+      "profitFactor": 4.5
+    },
+    "riskMetrics": {
+      "riskScore": 1,
+      "maxDrawdown": 1.5,
+      "sharpeRatio": 5.1,
+      "averageTradeDuration": "4d",
+      "maxConsecutiveLosses": 1,
+      "leverageUsed": "1:1"
+    },
+    "strategy": {
+      "style": "Delta Neutral",
+      "markets": ["Commodities", "Indices"],
+      "preferredAssets": ["Crude Oil", "Gold", "S&P 500"],
+      "timeframe": "Daily",
+      "riskLevel": "Very Low"
+    },
+    "social": {
+      "followers": 4200,
+      "copiers": 560,
+      "rating": 5.0,
+      "reviewsCount": 210
+    },
+    "isActive": true
+  },
+  {
+    "name": "Tessa Ray",
+    "username": "tessa_swing",
+    "avatar": "https://i.pravatar.cc/150?u=tessa",
+    "bio": "Swing trading based on Fibonacci levels and Elliot Wave theory. Patient capital approach.",
+    "verified": true,
+    "experienceYears": 8,
+    "location": "Sydney, Australia",
+    "performance": {
+      "roi30d": 18.4,
+      "roi90d": 42.1,
+      "roi1y": 125.4,
+      "totalRoi": 285.0,
+      "monthlyAverage": 12.5,
+      "totalProfit": 202400,
+      "assetsUnderManagement": 1100000,
+      "winRate": 65,
+      "totalTrades": 240,
+      "winningTrades": 156,
+      "losingTrades": 84,
+      "avgWin": 4200,
+      "avgLoss": 1900,
+      "profitFactor": 2.8
+    },
+    "riskMetrics": {
+      "riskScore": 4,
+      "maxDrawdown": 6.1,
+      "sharpeRatio": 2.7,
+      "averageTradeDuration": "5d",
+      "maxConsecutiveLosses": 4,
+      "leverageUsed": "1:10"
+    },
+    "strategy": {
+      "style": "Swing Trading",
+      "markets": ["Forex", "Crypto"],
+      "preferredAssets": ["AUD/USD", "DOT/USD"],
+      "timeframe": "H4",
+      "riskLevel": "Medium"
+    },
+    "social": {
+      "followers": 9800,
+      "copiers": 312,
+      "rating": 4.8,
+      "reviewsCount": 145
+    },
+    "isActive": true
+  },
+  {
+    "name": "Kaelan Pierce",
+    "username": "pierce_flow",
+    "avatar": "https://i.pravatar.cc/150?u=kaelan",
+    "bio": "Order flow specialist. Reading the tape and volume profile to find high-conviction entries.",
+    "verified": true,
+    "experienceYears": 6,
+    "location": "Chicago, USA",
+    "performance": {
+      "roi30d": 15.9,
+      "roi90d": 36.8,
+      "roi1y": 110.5,
+      "totalRoi": 210.0,
+      "monthlyAverage": 10.2,
+      "totalProfit": 146280,
+      "assetsUnderManagement": 920000,
+      "winRate": 71,
+      "totalTrades": 1400,
+      "winningTrades": 994,
+      "losingTrades": 406,
+      "avgWin": 650,
+      "avgLoss": 410,
+      "profitFactor": 2.5
+    },
+    "riskMetrics": {
+      "riskScore": 4,
+      "maxDrawdown": 5.0,
+      "sharpeRatio": 3.0,
+      "averageTradeDuration": "1h",
+      "maxConsecutiveLosses": 5,
+      "leverageUsed": "1:40"
+    },
+    "strategy": {
+      "style": "Order Flow",
+      "markets": ["Futures", "Forex"],
+      "preferredAssets": ["ES Futures", "CL Futures"],
+      "timeframe": "M15",
+      "riskLevel": "Medium"
+    },
+    "social": {
+      "followers": 11000,
+      "copiers": 670,
+      "rating": 4.7,
+      "reviewsCount": 267
+    },
+    "isActive": true
+  },
+  {
+    "name": "Lydia Grant",
+    "username": "grant_yield",
+    "avatar": "https://i.pravatar.cc/150?u=lydia",
+    "bio": "DeFi yield farming expert. Low-risk strategies focusing on liquidity provision and stablecoin pairs.",
+    "verified": true,
+    "experienceYears": 4,
+    "location": "Toronto, Canada",
+    "performance": {
+      "roi30d": 8.1,
+      "roi90d": 24.5,
+      "roi1y": 94.2,
+      "totalRoi": 182.0,
+      "monthlyAverage": 7.8,
+      "totalProfit": 672300,
+      "assetsUnderManagement": 8300000,
+      "winRate": 99,
+      "totalTrades": 50,
+      "winningTrades": 49,
+      "losingTrades": 1,
+      "avgWin": 15000,
+      "avgLoss": 5000,
+      "profitFactor": 8.5
+    },
+    "riskMetrics": {
+      "riskScore": 1,
+      "maxDrawdown": 0.8,
+      "sharpeRatio": 5.5,
+      "averageTradeDuration": "2w",
+      "maxConsecutiveLosses": 1,
+      "leverageUsed": "1:1"
+    },
+    "strategy": {
+      "style": "Yield Farming",
+      "markets": ["DeFi"],
+      "preferredAssets": ["USDT/USDC", "ETH/LDO"],
+      "timeframe": "Daily",
+      "riskLevel": "Very Low"
+    },
+    "social": {
+      "followers": 3100,
+      "copiers": 890,
+      "rating": 5.0,
+      "reviewsCount": 310
+    },
+    "isActive": true
+  },
+  {
+    "name": "Dominic Hart",
+    "username": "hart_break",
+    "avatar": "https://i.pravatar.cc/150?u=dominic",
+    "bio": "Volatility breakout specialist. Trading massive momentum shifts in micro-cap equities.",
+    "verified": true,
+    "experienceYears": 7,
+    "location": "Tokyo, Japan",
+    "performance": {
+      "roi30d": 26.4,
+      "roi90d": 68.2,
+      "roi1y": 184.5,
+      "totalRoi": 412.0,
+      "monthlyAverage": 21.5,
+      "totalProfit": 712800,
+      "assetsUnderManagement": 2700000,
+      "winRate": 54,
+      "totalTrades": 580,
+      "winningTrades": 313,
+      "losingTrades": 267,
+      "avgWin": 8500,
+      "avgLoss": 2100,
+      "profitFactor": 2.1
+    },
+    "riskMetrics": {
+      "riskScore": 6,
+      "maxDrawdown": 9.4,
+      "sharpeRatio": 2.1,
+      "averageTradeDuration": "2h",
+      "maxConsecutiveLosses": 8,
+      "leverageUsed": "1:20"
+    },
+    "strategy": {
+      "style": "Breakout",
+      "markets": ["Stocks", "Crypto"],
+      "preferredAssets": ["Penny Stocks", "Small Caps"],
+      "timeframe": "M15",
+      "riskLevel": "High"
+    },
+    "social": {
+      "followers": 19400,
+      "copiers": 110,
+      "rating": 4.5,
+      "reviewsCount": 156
+    },
+    "isActive": true
+  },
+  {
+    "name": "Sloane Mercer",
+    "username": "mercer_quant",
+    "avatar": "https://i.pravatar.cc/150?u=sloane",
+    "bio": "Statistical arbitrage based on pair correlation and historical deviation. Data-driven decision making.",
+    "verified": true,
+    "experienceYears": 11,
+    "location": "Boston, USA",
+    "performance": {
+      "roi30d": 13.5,
+      "roi90d": 35.1,
+      "roi1y": 118.0,
+      "totalRoi": 256.0,
+      "monthlyAverage": 10.8,
+      "totalProfit": 594000,
+      "assetsUnderManagement": 4400000,
+      "winRate": 80,
+      "totalTrades": 1200,
+      "winningTrades": 960,
+      "losingTrades": 240,
+      "avgWin": 1400,
+      "avgLoss": 950,
+      "profitFactor": 3.2
+    },
+    "riskMetrics": {
+      "riskScore": 2,
+      "maxDrawdown": 3.2,
+      "sharpeRatio": 3.8,
+      "averageTradeDuration": "6h",
+      "maxConsecutiveLosses": 4,
+      "leverageUsed": "1:15"
+    },
+    "strategy": {
+      "style": "Statistical Arb",
+      "markets": ["Stocks", "Forex"],
+      "preferredAssets": ["Gold/Silver Ratio", "Oil Pairs"],
+      "timeframe": "H4",
+      "riskLevel": "Low"
+    },
+    "social": {
+      "followers": 8200,
+      "copiers": 445,
+      "rating": 4.9,
+      "reviewsCount": 178
+    },
+    "isActive": true
+  },
+  {
+    "name": "Victor Thorne",
+    "username": "v_thorne",
+    "avatar": "https://i.pravatar.cc/150?u=victor",
+    "bio": "Aggressive momentum trading. Riding high-volume trends in global indices and commodities.",
+    "verified": true,
+    "experienceYears": 9,
+    "location": "London, UK",
+    "performance": {
+      "roi30d": 19.2,
+      "roi90d": 48.5,
+      "roi1y": 142.1,
+      "totalRoi": 312.0,
+      "monthlyAverage": 14.5,
+      "totalProfit": 288000,
+      "assetsUnderManagement": 1500000,
+      "winRate": 69,
+      "totalTrades": 980,
+      "winningTrades": 676,
+      "losingTrades": 304,
+      "avgWin": 1200,
+      "avgLoss": 550,
+      "profitFactor": 2.6
+    },
+    "riskMetrics": {
+      "riskScore": 5,
+      "maxDrawdown": 7.3,
+      "sharpeRatio": 2.5,
+      "averageTradeDuration": "3h",
+      "maxConsecutiveLosses": 5,
+      "leverageUsed": "1:30"
+    },
+    "strategy": {
+      "style": "Momentum",
+      "markets": ["Indices", "Commodities"],
+      "preferredAssets": ["DAX", "FTSE 100", "BRENT"],
+      "timeframe": "M30",
+      "riskLevel": "High"
+    },
+    "social": {
+      "followers": 14500,
+      "copiers": 620,
+      "rating": 4.7,
+      "reviewsCount": 234
+    },
+    "isActive": true
+  },
+  {
+    "name": "Marcus Vane",
+    "username": "vane_macro",
+    "avatar": "https://i.pravatar.cc/150?u=marcus",
+    "bio": "Global macro strategist. Trading economic shifts, interest rate changes, and geopolitical events.",
+    "verified": true,
+    "experienceYears": 12,
+    "location": "Rome, Italy",
+    "performance": {
+      "roi30d": 11.5,
+      "roi90d": 31.2,
+      "roi1y": 98.4,
+      "totalRoi": 204.0,
+      "monthlyAverage": 9.2,
+      "totalProfit": 207000,
+      "assetsUnderManagement": 1800000,
+      "winRate": 61,
+      "totalTrades": 120,
+      "winningTrades": 73,
+      "losingTrades": 47,
+      "avgWin": 9500,
+      "avgLoss": 4200,
+      "profitFactor": 2.3
+    },
+    "riskMetrics": {
+      "riskScore": 3,
+      "maxDrawdown": 5.5,
+      "sharpeRatio": 2.8,
+      "averageTradeDuration": "2w",
+      "maxConsecutiveLosses": 3,
+      "leverageUsed": "1:3"
+    },
+    "strategy": {
+      "style": "Global Macro",
+      "markets": ["Forex", "Bonds"],
+      "preferredAssets": ["USD/JPY", "10Y Treasury"],
+      "timeframe": "Weekly",
+      "riskLevel": "Medium"
+    },
+    "social": {
+      "followers": 5900,
+      "copiers": 180,
+      "rating": 4.8,
+      "reviewsCount": 67
+    },
+    "isActive": true
+  }
+]

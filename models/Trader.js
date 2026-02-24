@@ -1,59 +1,43 @@
 const mongoose = require("mongoose");
+
 const traderSchema = new mongoose.Schema(
   {
-    name: String,
-    username: String,
-    avatar: String,
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
+    username: { type: String, required: true, unique: true },
+    profileImage: String,
     bio: String,
     verified: { type: Boolean, default: false },
-    experienceYears: Number,
-    location: String,
 
-    performance: {
-      roi30d: Number,
-      roi90d: Number,
-      roi1y: Number,
-      totalRoi: Number,
-      monthlyAverage: Number,
-      totalProfit: Number,
-      assetsUnderManagement: Number,
-      winRate: Number,
-      totalTrades: Number,
-      winningTrades: Number,
-      losingTrades: Number,
-      avgWin: Number,
-      avgLoss: Number,
-      profitFactor: Number,
-    },
+    // Performance Metrics
+    totalROI: { type: Number, default: 0 },
+    monthlyROI: [{ month: String, roi: Number }],
+    winRate: { type: Number, default: 0 },
+    maxDrawdown: { type: Number, default: 0 },
+    riskScore: { type: Number, min: 1, max: 10, default: 5 },
 
-    riskMetrics: {
-      riskScore: Number,
-      maxDrawdown: Number,
-      sharpeRatio: Number,
-      averageTradeDuration: String,
-      maxConsecutiveLosses: Number,
-      leverageUsed: String,
-    },
+    // Pro Stats
+    equity: { type: Number, default: 0 }, // Trader's own balance
+    totalTrades: { type: Number, default: 0 },
+    avgTradeDuration: Number, // in minutes
+    tradingStyle: { type: String, enum: ["Scalping", "Day Trading", "Swing"] },
 
-    strategy: {
-      style: String,
-      markets: [String],
-      preferredAssets: [String],
-      timeframe: String,
-      riskLevel: String,
-    },
-
-    social: {
-      followers: { type: Number, default: 0 },
-      copiers: { type: Number, default: 0 },
-      rating: Number,
-      reviewsCount: Number,
-    },
+    // Copier Info
+    followersCount: { type: Number, default: 0 },
+    totalCopiedCapital: { type: Number, default: 0 },
+    minCopyAmount: { type: Number, default: 100 },
+    performanceFeePercent: { type: Number, default: 20 },
 
     isActive: { type: Boolean, default: true },
+    lastTradeAt: Date,
+    assetAllocation: [{ name: String, value: Number }],
+    recentHistory: [{ closedAt: Date, pnl: Number }],
   },
   { timestamps: true },
 );
 
-const Trader = mongoose.model("Trader", traderSchema);
-module.exports = Trader;
+module.exports = mongoose.model("Trader", traderSchema);

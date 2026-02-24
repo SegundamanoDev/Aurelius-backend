@@ -1,90 +1,11 @@
 const Transaction = require("../models/Transaction.js");
 const User = require("../models/User.js");
 const mongoose = require("mongoose");
+const Wallet = require("../models/Wallet");
 
 // ==========================================
-// 1. WALLET OPERATIONS (External Money)
+// 1. PURCHASE LOGIC (Services/Signals)
 // ==========================================
-
-// Create Deposit (User starts here)
-exports.depositFunds = async (req, res) => {
-  try {
-    // Multer puts text fields in req.body and the file in req.file
-    const { amount, method, referenceId } = req.body;
-
-    // Check if file exists
-    if (!req.file) {
-      return res.status(400).json({ message: "No proof of payment uploaded" });
-    }
-
-    const transaction = await Transaction.create({
-      userId: req.user._id,
-      type: "deposit",
-      amount: Number(amount), // FORCE CONVERSION TO NUMBER
-      method,
-      referenceId,
-      status: "pending",
-      description: `Deposit via ${method}`,
-      proofImage: req.file.path, // Cloudinary URL
-    });
-
-    res.status(201).json(transaction);
-  } catch (error) {
-    console.error("Deposit Controller Error:", error);
-    res.status(400).json({ message: error.message });
-  }
-};
-
-// Request Withdrawal (User)
-exports.requestWithdrawal = async (req, res) => {
-  const { amount, method, payoutAddress } = req.body; // Added payoutAddress
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const user = await User.findById(req.user._id).session(session);
-
-    if (user.balance < amount) {
-      throw new Error("Insufficient balance");
-    }
-
-    const referenceId = `WD-${Math.random().toString(36).toUpperCase().slice(2, 10)}`;
-
-    const [transaction] = await Transaction.create(
-      [
-        {
-          userId: req.user._id,
-          type: "withdrawal",
-          amount: Number(amount),
-          method,
-          referenceId,
-          status: "pending",
-          description: `Withdrawal request to ${payoutAddress}`,
-        },
-      ],
-      { session },
-    );
-
-    // Lock the funds immediately so they can't spend it elsewhere
-    user.balance -= amount;
-    await user.save({ session });
-
-    await session.commitTransaction();
-
-    // Return the transaction object so the frontend can use the referenceId in EmailJS
-    res.status(201).json(transaction);
-  } catch (error) {
-    await session.abortTransaction();
-    res.status(400).json({ message: error.message });
-  } finally {
-    session.endSession();
-  }
-};
-
-// ==========================================
-// 2. SERVICE & TRADING OPERATIONS (Internal)
-// ==========================================
-
 exports.purchaseService = async (req, res) => {
   const { amount, planName, signalType, description } = req.body;
   const userId = req.user._id;
@@ -93,23 +14,25 @@ exports.purchaseService = async (req, res) => {
   session.startTransaction();
 
   try {
-    const user = await User.findById(userId).session(session);
+    // 1. Find the WALLET instead of the User
+    const wallet = await Wallet.findOne({ user: userId }).session(session);
+    if (!wallet) throw new Error("Wallet not found for this user.");
 
-    if (!user) throw new Error("User not found");
-
-    if (user.balance < amount) {
+    // 2. Check Liquidity in Wallet
+    if (wallet.freeBalance < amount) {
       throw new Error("Insufficient liquidity for this purchase.");
     }
 
-    // Deduct balance
-    user.balance -= amount;
-    await user.save({ session });
+    // 3. Deduct from Wallet
+    wallet.freeBalance -= Number(amount);
+    wallet.totalBalance -= Number(amount);
+    await wallet.save({ session });
 
-    // Create transaction
+    // 4. Create Transaction record
     const [transaction] = await Transaction.create(
       [
         {
-          userId,
+          user: userId, // Fixed field name
           type: "purchase",
           amount,
           status: "completed",
@@ -127,88 +50,24 @@ exports.purchaseService = async (req, res) => {
     session.endSession();
 
     res.status(200).json({
+      success: true,
       message: "Purchase successful",
-      newBalance: user.balance,
+      newBalance: wallet.freeBalance,
       transaction,
     });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    res.status(400).json({ message: error.message });
-  }
-};
-
-// Universal Purchase Handler (Upgrade, Signal, Stake, Fund Trading)
-// transactionController.js
-
-exports.handleServicePurchase = async (req, res) => {
-  const { type, amount, details, description } = req.body;
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const user = await User.findById(req.user._id).session(session);
-    if (user.balance < amount)
-      throw new Error("Insufficient main wallet balance");
-
-    // --- PUT THE SWITCH BLOCK HERE ---
-    switch (type) {
-      case "account_upgrade":
-        user.accountType = details.planName;
-        break;
-      case "trading_fund":
-        // Moves money from main balance to trading pool
-        user.tradingBalance = (user.tradingBalance || 0) + amount;
-        break;
-      case "trading_sell":
-        // Checks if user has enough in trading to move back to main balance
-        if (user.tradingBalance < amount)
-          throw new Error("Insufficient trading capital");
-        user.tradingBalance -= amount;
-        user.balance += amount;
-        break;
-    }
-
-    // Deduct the cost from main balance (common for all types)
-    if (type !== "trading_sell") {
-      user.balance -= amount;
-    }
-
-    // 1. Create the Transaction record
-    await Transaction.create(
-      [
-        {
-          userId: req.user._id,
-          type,
-          amount,
-          details,
-          description,
-          status: "completed",
-        },
-      ],
-      { session },
-    );
-
-    // 2. Save User changes
-    await user.save({ session });
-
-    await session.commitTransaction();
-    res.status(201).json({ message: "Operation successful" });
-  } catch (error) {
-    await session.abortTransaction();
-    res.status(400).json({ message: error.message });
-  } finally {
-    session.endSession();
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
 // ==========================================
-// 3. HISTORY & STATS (User View)
+// 2. HISTORY & STATS
 // ==========================================
-
 exports.getMyTransactions = async (req, res) => {
   try {
-    const transactions = await Transaction.find({ userId: req.user._id }).sort(
+    const transactions = await Transaction.find({ user: req.user._id }).sort(
       "-createdAt",
     );
     res.json(transactions);
@@ -217,103 +76,187 @@ exports.getMyTransactions = async (req, res) => {
   }
 };
 
-// ==========================================
-// 4. ADMIN OPERATIONS
-// ==========================================
-
 exports.getAllTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find()
-      .populate("userId", "firstName lastName email")
+      .populate("user", "firstName lastName email currency")
       .sort("-createdAt");
     res.json(transactions);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-// transactionController.js
+
+// ==========================================
+// 3. ADMIN OPERATIONS (Approval & Injections)
+// ==========================================
 
 exports.updateTransactionStatus = async (req, res) => {
-  const { transactionId, status } = req.body;
+  const { transactionId, status } = req.body; // status: 'completed' | 'failed'
 
-  try {
-    const transaction = await Transaction.findById(transactionId);
-    if (!transaction) return res.status(404).json({ message: "Not found" });
-
-    // --- PUT THE STATUS CHECK HERE ---
-    // This stops the function if the transaction is already "done"
-    if (transaction.status === "completed" || transaction.status === "failed") {
-      return res.status(400).json({ message: "Transaction already processed" });
-    }
-
-    // ... continue with processing the status update (deposit logic, etc.)
-    if (transaction.type === "deposit" && status === "completed") {
-      await User.findByIdAndUpdate(transaction.userId, {
-        $inc: { balance: transaction.amount },
-      });
-    }
-
-    transaction.status = status;
-    await transaction.save();
-    res.json(transaction);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// backend/controllers/adminController.js
-
-exports.injectLedgerEntry = async (req, res) => {
-  const { userId, amount, method, date, type } = req.body;
-
-  try {
-    // 1. Create the historical transaction
-    const transaction = await Transaction.create({
-      userId,
-      type: type || "deposit",
-      amount: Number(amount),
-      status: "completed",
-      description: type === "profit" ? `+${amount} Profit` : ``,
-      createdAt: new Date(date),
+  // 1. Validate Input Status
+  const allowedStatuses = ["completed", "failed"];
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid status. Use 'completed' or 'failed'.",
     });
-
-    // 2. Update User Balances
-    const updateData = { $inc: { balance: Number(amount) } };
-
-    // If it's a profit, also increment the profit tracking field
-    if (type === "profit" || type === "trading_yield") {
-      updateData.$inc.totalProfits = Number(amount);
-    }
-
-    await User.findByIdAndUpdate(userId, updateData);
-    console.log(transaction);
-
-    res.status(201).json(transaction);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
   }
-};
-// transactionController.js
-
-exports.topupUserProfit = async (req, res) => {
-  const { userId, amount, description } = req.body;
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const user = await User.findById(userId).session(session);
-    if (!user) throw new Error("User not found");
+    // 2. Fetch Transaction with Session
+    const transaction =
+      await Transaction.findById(transactionId).session(session);
+    if (!transaction) throw new Error("Transaction record not found.");
 
-    // 1. Update User: Increase both liquid balance and cumulative profit record
-    user.balance += Number(amount);
-    user.totalProfits = (user.totalProfits || 0) + Number(amount);
-    await user.save({ session });
+    // 3. Prevent Double Processing
+    if (transaction.status !== "pending") {
+      throw new Error(`Conflict: Transaction is already ${transaction.status}`);
+    }
+
+    // 4. Identify User and Wallet
+    const targetUserId = transaction.user || transaction.userId;
+    if (!targetUserId)
+      throw new Error("Corrupted Data: No User ID linked to transaction.");
+
+    const wallet = await Wallet.findOne({ user: targetUserId }).session(
+      session,
+    );
+    if (!wallet)
+      throw new Error(`Critical: Wallet not found for user ${targetUserId}`);
+
+    // 5. Logic Engine
+    const amount = Number(transaction.amount);
+
+    if (transaction.type === "deposit") {
+      if (status === "completed") {
+        // Only credit on approval
+        wallet.totalBalance += amount;
+        wallet.freeBalance += amount;
+      }
+      // If failed, we do nothing to wallet; user just doesn't get the money.
+    } else if (transaction.type === "withdrawal") {
+      if (status === "failed") {
+        // REFUND: Put money back because the request was rejected/failed
+        wallet.totalBalance += amount;
+        wallet.freeBalance += amount;
+      }
+      // If completed, we do nothing; money was already deducted at request.
+    }
+
+    // 6. Persist Changes
+    transaction.status = status;
+
+    // We save both within the session to ensure atomicity
+    await transaction.save({ session });
+    await wallet.save({ session });
+
+    // 7. Commit and Finish
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      success: true,
+      message: `Transaction ${transaction.type} marked as ${status}.`,
+      data: {
+        transaction,
+        newBalance: wallet.freeBalance,
+      },
+    });
+  } catch (error) {
+    // Rollback all changes if any step fails
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error("Transaction Update Error:", error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.injectLedgerEntry = async (req, res) => {
+  const { userId, amount, method, date, type } = req.body;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const transaction = await Transaction.create(
+      [
+        {
+          user: userId, // Updated from userId
+          type: type || "deposit",
+          amount: Number(amount),
+          status: "completed",
+          method: method || "System Ledger",
+          createdAt: new Date(date),
+        },
+      ],
+      { session },
+    );
+
+    const mathAmount =
+      type === "withdrawal" ? -Math.abs(amount) : Math.abs(amount);
+
+    const walletUpdate = {
+      $inc: {
+        totalBalance: mathAmount,
+        freeBalance: mathAmount,
+      },
+    };
+
+    if (type === "profit") {
+      walletUpdate.$inc.totalProfits = Math.abs(amount);
+    }
+
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      { user: userId },
+      walletUpdate,
+      { session, new: true },
+    );
+
+    if (!updatedWallet) throw new Error("User wallet not found");
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json(transaction[0]);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.topupUserProfit = async (req, res) => {
+  const { userId, amount, description } = req.body;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. Update Wallet instead of User balance
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      { user: userId },
+      {
+        $inc: {
+          freeBalance: Number(amount),
+          totalBalance: Number(amount),
+          totalProfits: Number(amount), // Ensure your Wallet schema has this field
+        },
+      },
+      { session, new: true },
+    );
+
+    if (!updatedWallet) throw new Error("Wallet not found");
 
     const transaction = await Transaction.create(
       [
         {
-          userId,
+          user: userId, // Updated from userId
           type: "profit",
           amount,
           status: "completed",

@@ -2,43 +2,26 @@ const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
   {
-    userId: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
-
     type: {
       type: String,
-      enum: [
-        "deposit",
-        "purchase",
-        "withdrawal",
-        "account_upgrade",
-        "trading_fund",
-        "trading_yield",
-        "profit",
-      ],
+      enum: ["deposit", "withdrawal", "transfer", "profit", "loss", "copy_fee"],
       required: true,
     },
-    proofImage: { type: String },
     amount: { type: Number, required: true },
-
     status: {
       type: String,
-      enum: ["pending", "completed", "failed"],
+      enum: ["pending", "completed", "failed", "cancelled"],
       default: "pending",
     },
-    method: { type: String },
-    details: {
-      planName: String,
-      signalType: String,
-      stakingDuration: Number,
-    },
-
-    referenceId: String,
-    description: String,
+    method: { type: String }, // e.g., "BTC", "ETH", "USDT"
+    referenceId: { type: String, unique: true },
+    description: { type: String },
+    proofImage: { type: String }, // This stores the Cloudinary URL
   },
   { timestamps: true },
 );

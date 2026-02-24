@@ -1,25 +1,35 @@
 const express = require("express");
 const router = express.Router();
-
 const {
-  createTrader,
   getTraders,
-  getTraderById,
+  getTraderProfile,
+  becomeTrader,
   updateTrader,
   deleteTrader,
-  startCopying,
 } = require("../controllers/traderController");
 
-const { protect, admin } = require("../middleware/authMiddleware");
+// Import your Auth Middlewares (You will need to create these)
+// protect: ensures the user is logged in via JWT
+// authorize: ensures the user has a specific role (e.g., 'admin')
+const { protect } = require("../middleware/authMiddleware");
 
-// ===== PUBLIC =====
-router.post("/copy/start", protect, startCopying);
-router.get("/", getTraders);
-router.post("/", protect, admin, createTrader);
-router.get("/:id", getTraderById);
+/**
+ * PUBLIC ROUTES
+ * These are used for the "Copy Trade" discovery landing page
+ */
+router.get("/", getTraders); // GET /api/traders (with filters)
+router.get("/:id", getTraderProfile); // GET /api/traders/:id (detailed stats)
 
-// ===== ADMIN =====
-router.put("/:id", protect, admin, updateTrader);
-router.delete("/:id", protect, admin, deleteTrader);
+/**
+ * PROTECTED ROUTES
+ * User must be logged in to perform these actions
+ */
+router.post("/enroll", protect, becomeTrader); // POST /api/traders/enroll (Upgrade user to trader)
+
+/**
+ * ADMIN OR OWNER ONLY ROUTES
+ */
+router.put("/:id", protect, updateTrader); // PUT /api/traders/:id
+router.delete("/:id", protect, deleteTrader); // DELETE /api/traders/:id
 
 module.exports = router;

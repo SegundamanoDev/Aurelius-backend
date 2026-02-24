@@ -1,58 +1,79 @@
 const User = require("../models/User.js");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const Wallet = require("../models/Wallet.js");
 
 exports.registerUser = async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    middleName,
-    email,
-    password,
-    confirmPassword,
-    currency,
-    sex,
-    maritalStatus,
-    occupation,
-    address,
-  } = req.body;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    // 1. Basic Validation
-    if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match." });
-    }
-
-    const userExists = await User.findOne({ email });
-    if (userExists)
-      return res.status(400).json({ message: "Email already registered." });
-
-    // 2. Create User
-    // The password will be hashed automatically by the pre-save hook in the model
-    const user = await User.create({
+    const {
       firstName,
       lastName,
       middleName,
       email,
       password,
+      confirmPassword,
       currency,
       sex,
       maritalStatus,
       occupation,
       address,
-    });
+    } = req.body;
+
+    if (password !== confirmPassword) {
+      throw new Error("Passwords do not match.");
+    }
+
+    const userExists = await User.findOne({ email });
+    if (userExists) throw new Error("Email already registered.");
+
+    // 1. Create User
+    const [user] = await User.create(
+      [
+        {
+          firstName,
+          lastName,
+          middleName,
+          email,
+          password,
+          currency,
+          sex,
+          maritalStatus,
+          occupation,
+          address,
+        },
+      ],
+      { session },
+    );
+
+    // 2. Create Wallet with the USER'S CHOSEN CURRENCY
+    await Wallet.create(
+      [
+        {
+          user: user._id,
+          currency: currency || "USD", // Use the currency from req.body
+          totalBalance: 0,
+          freeBalance: 0,
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(201).json({
       success: true,
-      user: {
-        _id: user._id,
-        email: user.email,
-      },
+      user: { _id: user._id, email: user.email },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    await session.abortTransaction();
+    session.endSession();
+    res.status(400).json({ message: error.message });
   }
 };
-
 // Helper to generate JWT
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });

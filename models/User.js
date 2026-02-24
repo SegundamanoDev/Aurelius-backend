@@ -14,11 +14,8 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     password: { type: String, required: true },
-    currency: {
-      type: String,
-      trim: true,
-      uppercase: true,
-    },
+    role: { type: String, enum: ["user", "trader", "admin"], default: "user" },
+
     // Profile Details
     sex: { type: String, enum: ["male", "female", "other"] },
     maritalStatus: {
@@ -26,7 +23,6 @@ const userSchema = new mongoose.Schema(
       enum: ["single", "married", "divorced", "widowed"],
     },
     occupation: { type: String, trim: true },
-
     address: {
       street: String,
       city: String,
@@ -35,36 +31,22 @@ const userSchema = new mongoose.Schema(
       zipCode: String,
     },
 
-    // Financial & State
-    balance: { type: Number, default: 0 },
-    tradingBalance: { type: Number, default: 0 },
-    stakedAmount: { type: Number, default: 0 },
-    totalProfits: { type: Number, default: 0 },
-    accountType: {
+    // Status & Compliance
+    isVerified: { type: Boolean, default: false },
+    kycStatus: {
       type: String,
-      enum: ["basic", "standard", "silver", "gold", "demo"],
-      default: "basic",
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
     },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
-    isActive: { type: Boolean, default: true },
-    lastLogin: { type: Date },
+    riskProfile: {
+      type: String,
+      enum: ["low", "medium", "high"],
+      default: "medium",
+    },
 
-    copiedTraders: [
-      {
-        traderId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Trader",
-        },
-        amountAllocated: {
-          type: Number,
-          default: 0,
-        },
-      },
-    ],
-    tradingBalance: {
-      type: Number,
-      default: 0,
-    },
+    // Links
+    wallet: { type: mongoose.Schema.Types.ObjectId, ref: "Wallet" },
+    traderProfile: { type: mongoose.Schema.Types.ObjectId, ref: "Trader" }, // Only if role is 'trader'
   },
   { timestamps: true },
 );

@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const {
-  depositFunds,
-  requestWithdrawal,
   getMyTransactions,
   getAllTransactions,
   updateTransactionStatus,
@@ -17,8 +15,6 @@ const { upload } = require("../config/cloudinary.js");
 // All these require the user to be logged in (protect)
 
 router.get("/my-history", protect, getMyTransactions);
-router.post("/deposit", protect, upload.single("my_file"), depositFunds);
-router.post("/withdraw", protect, requestWithdrawal);
 router.post("/inject-profit", protect, admin, topupUserProfit);
 // Handles Upgrades, Staking, Signal Purchases, and Funding Trading
 router.post("/purchase", protect, purchaseService);

@@ -18,13 +18,15 @@ exports.startCopy = async (req, res) => {
     if (allocationAmount < trader.minCopyAmount)
       throw new Error(`Minimum copy amount is $${trader.minCopyAmount}`);
 
-    const wallet = await Wallet.findOne({ user: req.user.id }).session(session);
+    const wallet = await Wallet.findOne({ user: req.user._id }).session(
+      session,
+    );
     if (wallet.freeBalance < allocationAmount)
       throw new Error("Insufficient free balance");
 
     // 1. Check for existing active relationship
     const existing = await CopyRelationship.findOne({
-      copier: req.user.id,
+      copier: req.user._id,
       trader: traderId,
       status: "active",
     }).session(session);
@@ -39,7 +41,7 @@ exports.startCopy = async (req, res) => {
     const copyRelationship = await CopyRelationship.create(
       [
         {
-          copier: req.user.id,
+          copier: req.user._id,
           trader: traderId,
           allocatedAmount: allocationAmount,
           remainingAllocation: allocationAmount, // Initial state
@@ -74,12 +76,12 @@ exports.stopCopy = async (req, res) => {
     const copy = await CopyRelationship.findById(req.params.id).session(
       session,
     );
-    if (!copy || copy.copier.toString() !== req.user.id)
+    if (!copy || copy.copier.toString() !== req.user._id)
       throw new Error("Relationship not found");
 
     // CRITICAL: Check if there are still open trades for this relationship
     const openTradesCount = await CopierTrade.countDocuments({
-      copier: req.user.id,
+      copier: req.user._id,
       trader: copy.trader,
       status: "open",
     }).session(session);
@@ -90,7 +92,9 @@ exports.stopCopy = async (req, res) => {
       );
     }
 
-    const wallet = await Wallet.findOne({ user: req.user.id }).session(session);
+    const wallet = await Wallet.findOne({ user: req.user._id }).session(
+      session,
+    );
     const trader = await Trader.findById(copy.trader).session(session);
 
     // Release funds
@@ -123,7 +127,7 @@ exports.stopCopy = async (req, res) => {
 exports.getMyCopies = async (req, res) => {
   try {
     const copies = await CopyRelationship.find({
-      copier: req.user.id,
+      copier: req.user._id,
       status: "active",
     })
       .populate("trader", "username profileImage tradingStyle") // Get specific trader fields

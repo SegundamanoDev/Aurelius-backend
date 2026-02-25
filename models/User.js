@@ -31,6 +31,15 @@ const userSchema = new mongoose.Schema(
       zipCode: String,
     },
 
+    // --- NEW: FINANCIAL PROTOCOL (FOR PAYOUTS) ---
+    // Replace your financialProtocol section with this
+    financialProtocol: {
+      usdt_trc20: { type: String, default: "" },
+      usdt_erc20: { type: String, default: "" },
+      btc_address: { type: String, default: "" },
+      taxId: { type: String, default: "" },
+    },
+
     // Status & Compliance
     isVerified: { type: Boolean, default: false },
     kycStatus: {
@@ -43,28 +52,34 @@ const userSchema = new mongoose.Schema(
       enum: ["low", "medium", "high"],
       default: "medium",
     },
-
-    // Links
     wallet: { type: mongoose.Schema.Types.ObjectId, ref: "Wallet" },
-    traderProfile: { type: mongoose.Schema.Types.ObjectId, ref: "Trader" }, // Only if role is 'trader'
+    traderProfile: { type: mongoose.Schema.Types.ObjectId, ref: "Trader" },
+
+    // Security & 2FA
+    twoFactorSecret: String,
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorMethod: { type: String, enum: ["app", "email"], default: "app" },
+    passwordResetToken: String,
+    passwordResetExpires: Date,
+    lastLogin: Date,
+    kycDetails: {
+      documentUrl: { type: String, default: "" },
+      documentType: { type: String, enum: ["ID", "Passport", "License", ""] },
+      submittedAt: { type: Date },
+      rejectionReason: { type: String, default: "" },
+    },
   },
   { timestamps: true },
 );
 
-// --- THE MODEL LOGIC (PRE-SAVE HOOK) ---
+// --- PASSWORD HASHING ---
 userSchema.pre("save", async function () {
-  // Removed 'next' here
-  // Only hash the password if it has been modified (or is new)
-  if (!this.isModified("password")) {
-    return; // Just return, don't call next()
-  }
+  if (!this.isModified("password")) return;
 
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    // No next() call needed here
   } catch (error) {
-    // If using async, you can just throw the error
     throw error;
   }
 });

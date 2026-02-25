@@ -7,7 +7,7 @@ const Transaction = require("../models/Transaction");
  */
 exports.getWallet = async (req, res) => {
   try {
-    const wallet = await Wallet.findOne({ user: req.user.id });
+    const wallet = await Wallet.findOne({ user: req.user._id });
     if (!wallet) return res.status(404).json({ message: "Wallet not found" });
 
     res.status(200).json({ success: true, wallet });
@@ -55,7 +55,9 @@ exports.withdraw = async (req, res) => {
 
   try {
     const { amount, method, payoutAddress } = req.body; // Added payout details
-    const wallet = await Wallet.findOne({ user: req.user.id }).session(session);
+    const wallet = await Wallet.findOne({ user: req.user._id }).session(
+      session,
+    );
 
     if (!wallet) throw new Error("Wallet not found");
     if (wallet.isLocked) throw new Error("Wallet is locked. Contact support.");
@@ -70,7 +72,7 @@ exports.withdraw = async (req, res) => {
     // 2. Create Transaction as PENDING
     const transaction = await Transaction.create(
       {
-        user: req.user.id,
+        user: req.user._id,
         type: "withdrawal",
         amount: Number(amount),
         status: "pending", // Admin must approve to mark as completed

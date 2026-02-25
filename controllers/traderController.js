@@ -101,7 +101,7 @@ exports.becomeTrader = async (req, res) => {
       return res.status(400).json({ message: "Trader profile already exists" });
 
     const newTrader = await Trader.create({
-      user: req.user.id,
+      user: req.user._id,
       ...req.body, // includes username, minCopyAmount, tradingStyle
     });
 

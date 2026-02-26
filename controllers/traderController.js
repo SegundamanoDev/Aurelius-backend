@@ -66,6 +66,7 @@ exports.getTraderProfile = async (req, res) => {
       "user",
       "firstName lastName isVerified",
     );
+    console.log(trader);
 
     if (!trader) return res.status(404).json({ message: "Trader not found" });
 
@@ -117,18 +118,14 @@ exports.becomeTrader = async (req, res) => {
  */
 exports.updateTrader = async (req, res) => {
   try {
-    let trader = await Trader.findById(req.params.id);
+    let updateData = { ...req.body };
 
-    if (!trader) return res.status(404).json({ message: "Trader not found" });
-
-    // Security Check: Only the owner or an admin can update
-    if (trader.user.toString() !== req.user.id && req.user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to update this profile" });
+    // If a new file was uploaded, set the profileImage to the Cloudinary URL
+    if (req.file) {
+      updateData.profileImage = req.file.path;
     }
 
-    trader = await Trader.findByIdAndUpdate(req.params.id, req.body, {
+    const trader = await Trader.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });

@@ -91,19 +91,15 @@ exports.getTraderProfile = async (req, res) => {
   }
 };
 
-/**
- * @desc Create Trader Profile (User upgrades to Trader)
- * @route POST /api/traders/enroll
- */
 exports.becomeTrader = async (req, res) => {
   try {
-    const existing = await Trader.findOne({ user: req.user.id });
+    const existing = await Trader.findOne({ user: req.user._id });
     if (existing)
       return res.status(400).json({ message: "Trader profile already exists" });
 
     const newTrader = await Trader.create({
       user: req.user._id,
-      ...req.body, // includes username, minCopyAmount, tradingStyle
+      ...req.body,
     });
 
     res.status(201).json({ success: true, data: newTrader });

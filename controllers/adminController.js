@@ -1,7 +1,5 @@
 const User = require("../models/User");
 
-// @desc    Get all users with pending KYC
-// @route   GET /api/admin/kyc-pending
 exports.getPendingKYCs = async (req, res) => {
   try {
     const pendingUsers = await User.find({ kycStatus: "pending" })
@@ -16,10 +14,8 @@ exports.getPendingKYCs = async (req, res) => {
   }
 };
 
-// @desc    Approve or Reject KYC
-// @route   PATCH /api/admin/kyc-status/:id
 exports.reviewKYC = async (req, res) => {
-  const { status, rejectionReason } = req.body; // status: "approved" or "rejected"
+  const { status, rejectionReason } = req.body;
 
   try {
     const user = await User.findById(req.params.id);
@@ -30,7 +26,7 @@ exports.reviewKYC = async (req, res) => {
       user.kycDetails.rejectionReason =
         rejectionReason || "Documents unclear or invalid.";
     } else {
-      user.isVerified = true; // Auto-verify the account on approval
+      user.isVerified = true;
     }
 
     await user.save();

@@ -46,55 +46,52 @@ exports.deposit = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
-/**
- * @desc Withdraw funds (Checks for locked wallet and free balance)
- */
+
 exports.withdraw = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const { amount, method, payoutAddress } = req.body; // Added payout details
+    const { amount, method, payoutAddress } = req.body;
     const wallet = await Wallet.findOne({ user: req.user._id }).session(
       session,
     );
 
-    if (!wallet) throw new Error("Wallet not found");
-    if (wallet.isLocked) throw new Error("Wallet is locked. Contact support.");
     if (wallet.freeBalance < amount)
       throw new Error("Insufficient free balance");
 
-    // 1. Deduct from wallet immediately so they can't withdraw the same money twice
-    wallet.totalBalance -= Number(amount);
+    // 1. Move funds to frozen
     wallet.freeBalance -= Number(amount);
+    wallet.frozenBalance += Number(amount);
     await wallet.save({ session });
 
-    // 2. Create Transaction as PENDING
-    const transaction = await Transaction.create(
-      {
-        user: req.user._id,
-        type: "withdrawal",
-        amount: Number(amount),
-        status: "pending", // Admin must approve to mark as completed
-        method: method || "Bank Transfer",
-        payoutAddress: payoutAddress, // Where the admin should send the money
-        description: `Withdrawal request to ${method}`,
-      },
+    // 2. Create Transaction with a Generated Reference
+    const refId = `WTH-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+    await Transaction.create(
+      [
+        {
+          user: req.user._id,
+          type: "withdrawal",
+          amount: Number(amount),
+          status: "pending",
+          method: method || "Crypto",
+          payoutAddress,
+          referenceId: refId,
+          description: `Withdrawal request to ${payoutAddress}`,
+        },
+      ],
       { session },
     );
 
     await session.commitTransaction();
-    session.endSession();
-
-    res.status(200).json({
-      success: true,
-      message: "Withdrawal request submitted for review",
-      wallet,
-    });
+    res
+      .status(200)
+      .json({ success: true, message: "Withdrawal pending admin review" });
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
     res.status(400).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };

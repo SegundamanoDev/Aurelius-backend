@@ -44,7 +44,7 @@ exports.startCopy = async (req, res) => {
           copier: req.user._id,
           trader: traderId,
           allocatedAmount: allocationAmount,
-          remainingAllocation: allocationAmount, // Initial state
+          remainingAllocation: allocationAmount,
           stopCopyLossPercent: stopCopyLossPercent || 20,
         },
       ],

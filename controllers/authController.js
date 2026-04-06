@@ -6,6 +6,7 @@ const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
+const { log } = require("console");
 
 // Helper to generate JWT
 const generateToken = (id) => {
@@ -18,13 +19,14 @@ exports.registerUser = async (req, res) => {
 
   try {
     const {
+      username,
       firstName,
       lastName,
       middleName,
       email,
       password,
       confirmPassword,
-      currency, // This will go to the Wallet
+      currency,
       sex,
       maritalStatus,
       occupation,
@@ -35,25 +37,38 @@ exports.registerUser = async (req, res) => {
       throw new Error("Passwords do not match.");
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) throw new Error("Email already registered.");
+    // Check if Email OR Username already exists
+    const userExists = await User.findOne({
+      $or: [
+        { email: email.toLowerCase() },
+        { username: username.toLowerCase() },
+      ],
+    });
 
-    // 1. Create User (Note: currency removed from here, financialProtocol initialized)
+    if (userExists) {
+      const field =
+        userExists.email === email.toLowerCase() ? "Email" : "Username";
+      throw new Error(`${field} is already taken.`);
+    }
+
+    // 1. Create User
     const [user] = await User.create(
       [
         {
+          username: username.toLowerCase(),
           firstName,
           lastName,
           middleName,
-          email,
+          email: email.toLowerCase(),
           password,
           sex,
           maritalStatus,
           occupation,
           address,
           financialProtocol: {
-            payoutAddress: "",
-            payoutNetwork: "",
+            usdt_trc20: "",
+            usdt_erc20: "",
+            btc_address: "",
             taxId: "",
           },
         },
@@ -61,7 +76,7 @@ exports.registerUser = async (req, res) => {
       { session },
     );
 
-    // 2. Create Wallet and link to User
+    // 2. Create Wallet
     const [wallet] = await Wallet.create(
       [
         {
@@ -70,13 +85,14 @@ exports.registerUser = async (req, res) => {
           totalBalance: 0,
           freeBalance: 0,
           allocatedBalance: 0,
-          marginUsed: 0,
+          totalDeposits: 0,
+          totalProfits: 0,
         },
       ],
       { session },
     );
 
-    // 3. IMPORTANT UPDATE: Save the wallet reference back to the User
+    // 3. Link Wallet to User
     user.wallet = wallet._id;
     await user.save({ session });
 
@@ -87,18 +103,18 @@ exports.registerUser = async (req, res) => {
       success: true,
       user: {
         _id: user._id,
+        username: user.username,
         email: user.email,
-        wallet: wallet._id,
+        token: generateToken(user._id),
       },
     });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-// --- UPDATED LOGIN WITH 2FA DETECTION ---
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -120,6 +136,7 @@ exports.loginUser = async (req, res) => {
 
       res.json({
         _id: user._id,
+        username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -136,7 +153,6 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// --- NEW: CHANGE PASSWORD LOGIC ---
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;

@@ -92,9 +92,9 @@ exports.getAllTransactions = async (req, res) => {
 // ==========================================
 
 exports.updateTransactionStatus = async (req, res) => {
-  const { transactionId, status } = req.body; // status: 'completed' | 'failed'
+  const { transactionId, status } = req.body;
 
-  // 1. Validate Input Status
+  // 1. Validation
   const allowedStatuses = ["completed", "failed"];
   if (!allowedStatuses.includes(status)) {
     return res.status(400).json({
@@ -107,75 +107,86 @@ exports.updateTransactionStatus = async (req, res) => {
   session.startTransaction();
 
   try {
-    // 2. Fetch Transaction with Session
+    // 2. Fetch Data
     const transaction =
       await Transaction.findById(transactionId).session(session);
     if (!transaction) throw new Error("Transaction record not found.");
-
-    // 3. Prevent Double Processing
     if (transaction.status !== "pending") {
       throw new Error(`Conflict: Transaction is already ${transaction.status}`);
     }
 
-    // 4. Identify User and Wallet
     const targetUserId = transaction.user || transaction.userId;
-    if (!targetUserId)
-      throw new Error("Corrupted Data: No User ID linked to transaction.");
-
     const wallet = await Wallet.findOne({ user: targetUserId }).session(
       session,
     );
-    if (!wallet)
-      throw new Error(`Critical: Wallet not found for user ${targetUserId}`);
+    if (!wallet) throw new Error("Critical: User wallet not found.");
 
-    // 5. Logic Engine
     const amount = Number(transaction.amount);
 
+    // Store original balance for the audit log
+    transaction.previousBalance = wallet.freeBalance;
+
+    // 3. Merged Logic Branching
     if (transaction.type === "deposit") {
       if (status === "completed") {
-        // Only credit on approval
-        wallet.totalBalance += amount;
         wallet.freeBalance += amount;
+        wallet.totalDeposits = (wallet.totalDeposits || 0) + amount;
+        // wallet.totalBalance updates via Schema .pre('save')
       }
-      // If failed, we do nothing to wallet; user just doesn't get the money.
     } else if (transaction.type === "withdrawal") {
-      if (status === "failed") {
-        // REFUND: Put money back because the request was rejected/failed
-        wallet.totalBalance += amount;
+      if (status === "completed") {
+        // Remove from frozen (it was moved there during withdrawal request)
+        wallet.frozenBalance = Math.max(
+          0,
+          (wallet.frozenBalance || 0) - amount,
+        );
+        wallet.totalWithdrawals = (wallet.totalWithdrawals || 0) + amount;
+      } else if (status === "failed") {
+        // Return money from frozen back to freeBalance
+        wallet.frozenBalance = Math.max(
+          0,
+          (wallet.frozenBalance || 0) - amount,
+        );
         wallet.freeBalance += amount;
       }
-      // If completed, we do nothing; money was already deducted at request.
+    } else if (transaction.type === "profit") {
+      if (status === "completed") {
+        wallet.freeBalance += amount;
+        wallet.totalProfits = (wallet.totalProfits || 0) + amount;
+      }
     }
 
-    // 6. Persist Changes
+    // 4. Update Transaction Audit Trail
     transaction.status = status;
+    transaction.newBalance = wallet.freeBalance;
 
-    // We save both within the session to ensure atomicity
+    // 5. Commit Changes
     await transaction.save({ session });
     await wallet.save({ session });
 
-    // 7. Commit and Finish
     await session.commitTransaction();
     session.endSession();
 
     res.status(200).json({
       success: true,
-      message: `Transaction ${transaction.type} marked as ${status}.`,
+      message: `Transaction ${transaction.type} successfully marked as ${status}.`,
       data: {
         transaction,
-        newBalance: wallet.freeBalance,
+        updatedBalances: {
+          totalBalance: wallet.totalBalance,
+          freeBalance: wallet.freeBalance,
+          frozenBalance: wallet.frozenBalance,
+          totalDeposits: wallet.totalDeposits,
+          totalWithdrawals: wallet.totalWithdrawals,
+          totalProfits: wallet.totalProfits,
+        },
       },
     });
   } catch (error) {
-    // Rollback all changes if any step fails
     await session.abortTransaction();
     session.endSession();
-
     console.error("Transaction Update Error:", error.message);
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -185,22 +196,33 @@ exports.injectLedgerEntry = async (req, res) => {
   session.startTransaction();
 
   try {
-    const transaction = await Transaction.create(
+    const numAmount = Math.abs(Number(amount));
+
+    const descriptions = {
+      deposit: "Institutional Capital Funding",
+      profit: "Quarterly Performance Dividend",
+      withdrawal: "Account Liquidation / Capital Return",
+      referral: "Affiliate Commission Settlement",
+    };
+
+    const [transaction] = await Transaction.create(
       [
         {
-          user: userId, // Updated from userId
+          user: userId,
           type: type || "deposit",
-          amount: Number(amount),
+          amount: numAmount,
           status: "completed",
-          method: method || "System Ledger",
-          createdAt: new Date(date),
+          method: method || "Bank Wire",
+          createdAt: date ? new Date(date) : new Date(),
+          description: descriptions[type] || "Ledger Reconciliation Entry",
         },
       ],
       { session },
     );
+    console.log(transaction);
 
-    const mathAmount =
-      type === "withdrawal" ? -Math.abs(amount) : Math.abs(amount);
+    const isNegative = type === "withdrawal";
+    const mathAmount = isNegative ? -numAmount : numAmount;
 
     const walletUpdate = {
       $inc: {
@@ -210,70 +232,88 @@ exports.injectLedgerEntry = async (req, res) => {
     };
 
     if (type === "profit") {
-      walletUpdate.$inc.totalProfits = Math.abs(amount);
+      walletUpdate.$inc.totalProfits = numAmount;
+    } else if (type === "deposit") {
+      walletUpdate.$inc.totalDeposits = numAmount;
+    } else if (type === "withdrawal") {
+      walletUpdate.$inc.totalWithdrawals = numAmount;
     }
 
     const updatedWallet = await Wallet.findOneAndUpdate(
       { user: userId },
       walletUpdate,
-      { session, new: true },
+      { session, new: true, runValidators: true },
     );
 
-    if (!updatedWallet) throw new Error("User wallet not found");
+    if (!updatedWallet) throw new Error("Target Vault not found");
 
     await session.commitTransaction();
     session.endSession();
 
-    res.status(201).json(transaction[0]);
+    res.status(201).json({
+      success: true,
+      transaction,
+      newBalances: updatedWallet,
+    });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
 exports.topupUserProfit = async (req, res) => {
   const { userId, amount, description } = req.body;
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // 1. Update Wallet instead of User balance
+    const numAmount = Number(amount);
     const updatedWallet = await Wallet.findOneAndUpdate(
       { user: userId },
       {
         $inc: {
-          freeBalance: Number(amount),
-          totalBalance: Number(amount),
-          totalProfits: Number(amount), // Ensure your Wallet schema has this field
+          freeBalance: numAmount,
+          totalBalance: numAmount,
+          totalProfits: numAmount,
         },
       },
-      { session, new: true },
+      { session, new: true, runValidators: true },
     );
 
-    if (!updatedWallet) throw new Error("Wallet not found");
-
-    const transaction = await Transaction.create(
+    if (!updatedWallet) throw new Error("User wallet not found");
+    const [transaction] = await Transaction.create(
       [
         {
-          user: userId, // Updated from userId
+          user: userId,
           type: "profit",
-          amount,
+          amount: numAmount,
           status: "completed",
           description: description || "System Profit Allocation",
+          previousBalance: updatedWallet.freeBalance - numAmount,
+          newBalance: updatedWallet.freeBalance,
         },
       ],
       { session },
     );
 
+    // 3. Finalize Database Session
     await session.commitTransaction();
+
     res.status(201).json({
-      message: "Profit successfully injected",
-      transaction: transaction[0],
+      success: true,
+      message: "Profit successfully injected and logged",
+      transaction,
+      balances: {
+        currentBalance: updatedWallet.totalBalance,
+        lifetimeProfits: updatedWallet.totalProfits,
+      },
     });
   } catch (error) {
     await session.abortTransaction();
-    res.status(400).json({ message: error.message });
+    console.error("Profit Injection Error:", error.message);
+    res.status(400).json({ success: false, message: error.message });
   } finally {
     session.endSession();
   }

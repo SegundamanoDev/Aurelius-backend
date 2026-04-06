@@ -10,19 +10,18 @@ mongoose
 // HELPER: Generate cleaner, sequential history
 function generateDummyHistory() {
   let history = [];
-  let basePnl = 1200; // Start with some profit
+  let basePnl = 1200;
 
   // We want 20 days of data
   for (let i = 20; i >= 0; i--) {
-    // Random walk: move PnL up or down
     const volatility = Math.floor(Math.random() * 250) - 80;
     basePnl += volatility;
 
     const date = new Date();
-    date.setDate(date.getDate() - i); // Go back i days
+    date.setDate(date.getDate() - i);
 
     history.push({
-      closedAt: date, // Keep it as a Date object for Mongoose
+      closedAt: date,
       pnl: basePnl,
     });
   }
